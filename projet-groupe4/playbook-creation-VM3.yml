@@ -1,0 +1,44 @@
+- name: Create Azure VM3 ressource groupe g4
+  hosts: localhost
+  connection: local
+  vars:
+  - keyssh: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC69JWaOOIh3n3UU3DGS7nrLTxOePQVJN2XUtIzr3gRouT94HmdlPBla5x8S7NmZCJGJK9ic4GHCqjXk/liI9Ez6V2glbWTGA649BKBDID/JDek4TCVEpvqPSIRbEupvcnGkQC9QygmbdLkqg4+Jz6/e7tmG1Qtj91aRzxJkH2O3lOeh2eTe6PaLcSZLGKcwqrKiNwGUaA4XyJcxQHbQvLA+ZY5lrKBJBhIlmBv6vx2BFvbJLfdWOWdy90B1bbKC2wysago6IolEw+7MacB7MTu9nlezN51brC1jYYbzcrM4rCHG5ZKDHhvBe5dC1ulFnn7vF678ZT3W0aMnb/iPsg3xnpA1MvIRaK4sB2lJMXy+qVIP8MD6YSXA7oj4bhnmcWnULnkcr/RjiN6WYySg7MoEKqYFe0UBDxOu0HhIz8HAI0fvmR69/2UBUWDZptAEu5/MyvgYH1X/QNHg5cgOJsgl+4JHk9zVHCvpmPIvJKxZuLuSRZLUufdMx/bJtrEAr4JA3rDntjTUTC3Q7V+kM9hiWzKoPml52M2eLrUeToLTl8fmgorpcLrdhXwiTUZ/0SDN07dLZbdn2Y/lsT8Ps9LFhrh+Ns5fhUsGUpkeOkJmNJS1Rfffv8HsnhP+LLm7vfM3vz7NVCqR9+MYG9bqD+iqjWIPg30M8lSV9StIpnXiw== osboxes@master"
+  tasks:
+
+
+
+                                              # création du groupe de sécurité et  SSH:
+
+  - name: Create Network Security Group that allows SSH
+    azure_rm_securitygroup:
+      resource_group: g4
+      name: g4NetworkSecurityGroup
+      rules:
+        - name: SSH
+          protocol: Tcp
+          destination_port_range: 22
+          access: Allow
+          priority: 1001
+          direction: Inbound
+
+      
+                #  création de la VM1:
+
+  - name: Create VM3
+    azure_rm_virtualmachine:
+      resource_group: g4
+      name: g4VM3
+      subnet_name: g4Subnet
+      vm_size: Standard_B1s
+      managed_disk_type: Standard_LRS
+      admin_username: groupe4
+      ssh_password_enabled: "false"
+      ssh_public_keys:
+        - path: /home/omari/.ssh/authorized_keys
+          key_data: "{{keyssh}}"
+      image:
+        offer: 0001-com-ubuntu-server-focal
+        publisher: canonical
+        sku: 20_04-lts-gen2
+        version: latest
+  
