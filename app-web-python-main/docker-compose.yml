@@ -1,0 +1,48 @@
+---
+version: '3.6'
+services:
+
+  flask:
+    image: ericv12/webpy
+    container_name: Python-Flask
+    environment:
+      DB_HOST: mariadb
+      SAVE_DB: 'True'
+      DB_PORT: 3306
+      DB_USER: groupe4
+      DB_PASS: groupe4
+      DB_NAME: projet4
+    depends_on:
+      - mariadb
+    ports:
+      - 5001:5000
+    restart: always
+    networks:
+     - flask-network
+    links:
+     - mariadb
+
+  mariadb:
+    image: mariadb:10.5
+    container_name: MariaDB
+    hostname: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: azerty
+      MYSQL_DATABASE: projet4
+      MYSQL_PASSWORD: groupe4
+      MYSQL_USER: groupe4
+    networks:
+     - flask-network
+    volumes:
+      - ./dump-sql:/docker-entrypoint-initdb.d
+      - mariadb-storage:/var/lib/mysql/
+
+volumes:
+  mariadb-storage:
+    name: mariadb-storage
+    driver: local
+
+networks:
+  flask-network:
+    name: flask-network
+    driver: bridge

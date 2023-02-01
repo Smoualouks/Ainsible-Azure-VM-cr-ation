@@ -1,0 +1,8 @@
+FROM mysql:5.7
+LABEL maintainer="Group4"
+
+
+COPY ./mysql-dump/USER.sql /docker-entrypoint-initdb.d
+EXPOSE 3307
+
+CMD ["mysqld"]

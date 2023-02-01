@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+	
+ stages {
+      stage('checkout') {
+           steps {
+                git branch: 'main', credentialsId: 'connectGitlab', url: 'http://20.3.128.231/gitlab-instance-29e61fae/app-web-python'
+             
+          }
+        }
+  
+  stage('Docker Build pythonflask and Tag ericv12/webpy') {
+           steps {
+                  sh 'apt install sshpass -y'
+                  sh 'docker build -t pythonflask .'
+                  sh 'docker tag pythonflask ericv12/webpy' 
+                  sh "echo Images Taged"
+          } 
+        }
+     
+  stage('Publish image pythonflask to Docker Hub') {
+            steps {
+          withDockerRegistry([ credentialsId: "dockerhub2", url: "" ]) {
+            sh  'docker image push ericv12/webpy'
+            sh  'echo Publish image to Docker Hub'
+          }           
+          }
+        }
+
+  stage('Copy dump-sql folder and docker-compose to NFS server VM3') {
+    steps {
+        sh 'ls'
+        sh 'pwd'
+        sh 'sshpass -p ${USER_PASS} scp -o stricthostkeychecking=no -r /var/jenkins_home/workspace/pip-python/dump-sql groupe4@10.21.0.6:/home/groupe4/shared-data/python-web-app' 
+        sh 'sshpass -p ${USER_PASS} scp -o stricthostkeychecking=no -r /var/jenkins_home/workspace/pip-python/docker-compose.yml groupe4@10.21.0.6:/home/groupe4/shared-data/python-web-app'
+    }
+  }
+        
+  stage ('Run docker compose on VM2') {
+    steps{
+        sshagent(credentials : ['eric-ssh']) {
+          sh 'ssh groupe4@20.51.104.114 docker stop Python-Flask || true && docker rm - f Python-Flask || true && docker rmi ericv12/webpy || true'
+          sh 'ssh groupe4@20.51.104.114 docker pull ericv12/webpy'
+          sh 'ssh groupe4@20.51.104.114 cd /home/groupe4/data/python-web-app'
+          sh 'ssh groupe4@20.51.104.114 docker-compose -f /home/groupe4/data/python-web-app/docker-compose.yml up --force-recreate --build -d'
+        }
+      }
+    }
+  }
+}
+

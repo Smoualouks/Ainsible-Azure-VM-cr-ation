@@ -1,0 +1,56 @@
+version: '3.3'
+services:
+           # conteneur mysql
+  dbg4:
+    build:
+      context: .  
+      dockerfile: Dockerfile_mysql
+    image: ericv12/dbg4
+    container_name: dbg4
+    volumes:
+      - db_mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: group4
+      MYSQL_DATABASE: group4db
+      MYSQL_USER: group4user
+      MYSQL_PASSWORD: group4
+      MYSQL_PORT: 3307
+    ports:
+    - 3307:3307
+    #expose:
+    #  - 3307
+
+                  # conteneur phpmyadmin
+   
+  phpmyadming4:
+    depends_on:
+      - dbg4
+    image: phpmyadmin
+    container_name: phpmyadg4
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: dbg4
+      MYSQL_ROOT_PASSWORD: group4
+      MYSQL_PORT: 3307
+                # conteneur Tomcat
+  webg4:
+    build:
+      context: .       
+    depends_on:
+      - dbg4
+    image: ericv12/tomcatg4
+    container_name: tomcatg4
+    volumes:
+      - ./target/LoginWebApp-1.war:/usr/local/tomcat/webapps/LoginWebApp-1.war
+      - ./index.html:/usr/local/tomcat/webapps/test/index.html
+    ports:
+      - '8082:8080'
+    environment:
+      MYSQL_ROOT_PASSWORD: group4
+      MYSQL_DATABASE: group4db
+      MYSQL_USER: group4user
+      MYSQL_PASSWORD: group4
+      MYSQL_PORT: 3307
+volumes:
+  db_mysql:

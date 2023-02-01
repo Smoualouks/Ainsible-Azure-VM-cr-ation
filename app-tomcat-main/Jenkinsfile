@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+
+ stages {
+      stage('checkout') {
+           steps {
+             
+                git branch: 'main', credentialsId: 'connectGitlab', url: 'http://20.3.128.231/gitlab-instance-29e61fae/app-tomcat'
+             
+          }
+        }
+ 
+
+  stage('Docker Build and Tag') {
+           steps {
+                //sh 'apt install docker.io -y' 
+                //sh 'apt install docker-compose -y' 
+
+                sh 'docker-compose build'
+
+                //sh 'docker-compose down' 
+                sh "echo Build ok"
+          } 
+        }
+     
+  stage('Publish image to Docker Hub') {
+          
+            steps {
+        withDockerRegistry([ credentialsId: "dockerhub2", url: "" ]) {
+
+          sh  'docker image push ericv12/tomcatg4'
+          sh  'docker image push ericv12/dbg4'
+        
+        }
+                  sh "echo Publish image to Docker Hub"
+          }
+        }
+     
+      stage('Copy docker-compose.yml in the VM3 (vm storage) ') {
+             
+            steps {
+                sh 'sshpass -p ${USER_PASS} scp -o stricthostkeychecking=no -r /var/jenkins_home/workspace/pip6/fileVM2/docker-compose.yml groupe4@10.21.0.6:/home/groupe4/shared-data/tomcat'
+                sh "echo Copy ok"
+            }
+        }
+    stage ('Deploy Tomcat, Mysql, Phpmyadmin') {
+    steps{
+        sshagent(credentials : ['eric-ssh']) {
+          sh 'ssh groupe4@20.51.104.114 docker stop tomcatg4 || true && docker rm - f tomcatg4 || true && docker rmi ericv12/tomcatg4 || true'
+          sh 'ssh groupe4@20.51.104.114 docker stop dbg4 || true && docker rm - f dbg4 || true && docker rmi ericv12/dbg4 || true'
+          sh 'ssh groupe4@20.51.104.114 docker pull ericv12/tomcatg4'
+          sh 'ssh groupe4@20.51.104.114 docker pull ericv12/dbg4'
+          //sh 'ssh groupe4@20.51.104.114 cd /home/groupe4/data/python-web-app'
+          sh 'ssh groupe4@20.51.104.114 docker-compose -f /home/groupe4/data/tomcat/docker-compose.yml up --force-recreate --build -d'
+
+        }
+}
+    }
+    }
+
+} 
